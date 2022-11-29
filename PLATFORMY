@@ -1,0 +1,192 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <conio.h>
+#include <windows.h>
+#include <math.h>
+
+#define M_PI 3.14159265358
+
+#define width 65
+#define height 25
+
+void pokball();
+struct raket
+{
+	int x, y;
+	int w;
+};
+typedef struct raket Raket;
+
+struct ball
+{
+	float x, y;
+	int xi, yi;
+	float ugol;
+	float speed;
+};
+typedef struct ball Ball;
+
+char mas[height][width+1];
+Raket raket;
+Ball ball;
+int count = 0;
+int maxcount = 0;
+
+void formball()
+{
+	pokball(2,2);
+	ball.ugol = -1;
+	ball.speed = 0.5;
+}
+
+void putball()
+{
+	mas[ball.yi][ball.xi] = '*';
+}
+
+void pokball(float x, float y)
+{
+	ball.x = x;
+	ball.y = y;
+	ball.xi = (int)ball.x;
+	ball.yi = (int)ball.y;
+}
+
+void dvigball()
+{
+	if (ball.ugol < 0)
+		ball.ugol += M_PI * 2;
+	if (ball.ugol > M_PI * 2)
+		ball.ugol -= M_PI * 2;
+	
+	Ball bl = ball;
+	pokball(ball.x + cos(ball.ugol) * ball.speed, ball.y + sin(ball.ugol) * ball.speed);
+
+	if ((mas[ball.yi][ball.xi] == '#') || (mas[ball.yi][ball.xi] == '-'))
+	{
+		if (mas[ball.yi][ball.xi] == '-')
+			count++;
+
+		if ((ball.xi != bl.xi) && (ball.yi != bl.yi))
+		{
+			if (mas[bl.yi][ball.xi] == mas[ball.yi][bl.xi])
+				bl.ugol = bl.ugol + M_PI;
+			else
+			{
+				if (mas[bl.yi][ball.xi] == '#')
+					bl.ugol = (2 * M_PI - bl.ugol) + M_PI;
+				else
+					bl.ugol = (2 * M_PI - bl.ugol);
+			}
+		}
+		else if (ball.yi == bl.yi)
+			bl.ugol = (2 * M_PI - bl.ugol) + M_PI;
+		else
+			bl.ugol = (2 * M_PI - bl.ugol);
+
+		ball = bl;
+		dvigball();
+	}
+
+}
+
+void formraket()
+{
+	raket.w = 7;
+	raket.x = (width - raket.w) / 2;
+	raket.y = height - 1;
+
+}
+void putraket()
+{
+	for (int i = raket.x; i < raket.x + raket.w; i++)
+		mas[raket.y][i] = '-';
+}
+
+void form()
+{
+	for (int i = 0; i < width; i++)
+		mas[0][i] = '#';
+	mas[0][width] = '\0';
+
+	strncpy(mas[1], mas[0], width + 1);
+	for (int i = 1; i < width-1; i++)
+		mas[1][i] = ' ';
+
+	for (int i = 2; i < height; i++)
+		strncpy(mas[i], mas[1], width+1);
+
+}
+
+void pokform()
+{
+	for (int i = 0; i < height; i++)
+	{
+		printf("%s", mas[i]);
+		if (i == 3)
+			printf("    !!! %i    ", count);
+		if (i == 4)
+			printf("    max %i    ", maxcount);
+		if (i < height - 1)
+			printf("\n");
+	}
+}
+
+void dvigraket(int x)
+{
+	raket.x = x;
+	if (raket.x < 1)
+		raket.x = 1;
+	if (raket.x + raket.w >= width)
+		raket.x = width - 1 - raket.w;
+}
+
+void cursor(int x, int y)
+{
+	COORD coord;
+	coord.X = x;
+	coord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+int main()
+{
+	char c;
+	BOOL run = FALSE;
+	formraket();
+	formball();
+		do
+		{
+			cursor(0, 0);
+
+			if (run)
+				dvigball();
+
+			if (ball.yi > height)
+			{
+				run = FALSE;
+				if (count > maxcount)
+					maxcount = count;
+				count = 0;
+			}
+
+
+			form();
+			putraket();
+			putball();
+			pokform();
+
+			if (GetKeyState('A') < 0)
+				dvigraket(raket.x - 1);
+			if (GetKeyState('D') < 0)
+				dvigraket(raket.x + 1);
+			if (GetKeyState('W') < 0)
+				run = TRUE;
+			if (!run)
+			    pokball(raket.x + raket.w / 2, raket.y - 1);
+			Sleep(10);
+
+		} while ((GetKeyState('V') >= 0));
+	return 0;
+}
