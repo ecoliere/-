@@ -1,0 +1,178 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <conio.h>
+#include <windows.h>
+#include <math.h>
+
+#define M_PI 3.14159265358
+
+struct raket
+{
+	int x, y;
+	int w;
+};
+typedef struct raket Raket;
+
+struct ball
+{
+	float x, y;
+	int xi, yi;
+	float ugol;
+	float speed;
+};
+typedef struct ball Ball;
+
+char mas[25][66];
+Raket raket;
+Ball ball;
+int count = 0;
+int maxcount = 0;
+int lvl = 1;
+
+void pokball(float x, float y)
+{
+	ball.x = x;
+	ball.y = y;
+	ball.xi = (int)ball.x;
+	ball.yi = (int)ball.y;
+}
+
+void dvigraket(int x)
+{
+	raket.x = x;
+	if (raket.x < 1)
+		raket.x = 1;
+	if (raket.x + raket.w >= 65)
+		raket.x = 25 - 1 - raket.w;
+}
+
+void cursor(int x, int y)
+{
+	COORD coord;
+	coord.X = x;
+	coord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+int main()
+{
+	char c;
+	BOOL run = FALSE;
+	raket.w = 7;
+	raket.x = (65 - raket.w) / 2;
+	raket.y = 25 - 1;
+	pokball(2, 2);
+	ball.ugol = -1;
+	ball.speed = 0.5;
+		do
+		{
+			cursor(0, 0);
+
+			if (run)
+			{
+				if (ball.ugol < 0)
+					ball.ugol += M_PI * 2;
+				if (ball.ugol > M_PI * 2)
+					ball.ugol -= M_PI * 2;
+
+				Ball bl = ball;
+				pokball(ball.x + cos(ball.ugol) * ball.speed, ball.y + sin(ball.ugol) * ball.speed);
+
+				if ((mas[ball.yi][ball.xi] == '#') || (mas[ball.yi][ball.xi] == '-'))
+				{
+					if (mas[ball.yi][ball.xi] == '-')
+						count++;
+
+					if ((ball.xi != bl.xi) && (ball.yi != bl.yi))
+					{
+						if (mas[bl.yi][ball.xi] == mas[ball.yi][bl.xi])
+							bl.ugol = bl.ugol + M_PI;
+						else
+						{
+							if (mas[bl.yi][ball.xi] == '#')
+								bl.ugol = (2 * M_PI - bl.ugol) + M_PI;
+							else
+								bl.ugol = (2 * M_PI - bl.ugol);
+						}
+					}
+					else if (ball.yi == bl.yi)
+						bl.ugol = (2 * M_PI - bl.ugol) + M_PI;
+					else
+						bl.ugol = (2 * M_PI - bl.ugol);
+
+					ball = bl;
+				}
+			}
+
+			if (ball.yi > 25)
+			{
+				run = FALSE;
+				if (count > maxcount)
+					maxcount = count;
+				count = 0;
+			}
+
+			
+			for (int i = 0; i < 65; i++)
+				mas[0][i] = '#';
+			mas[0][65] = '\0';
+
+			strncpy(mas[1], mas[0], 65 + 1);
+			for (int i = 1; i < 65 - 1; i++)
+				mas[1][i] = ' ';
+			
+			for (int i = 2; i < 25; i++)
+				strncpy(mas[i], mas[1], 65 + 1);
+
+			if (maxcount > 5)
+			{
+				for (int i = 5; i < 45; i++)
+					mas[6][i] = '#';
+				lvl = 2;
+			}
+
+			if (lvl >= 2 && maxcount > 7)
+			{
+				for (int i = 5; i < 45; i++)
+					mas[6][i] = '#';
+
+				for (int i = 37; i < 59; i++)
+					mas[9][i] = '#';
+
+				for (int i = 25; i < 40; i++)
+					mas[12][i] = '#';
+				lvl = 3;
+			}
+
+			for (int i = raket.x; i < raket.x + raket.w; i++)
+				mas[raket.y][i] = '-';
+
+			mas[ball.yi][ball.xi] = '*';
+
+			for (int i = 0; i < 25; i++)
+			{
+				printf("%s", mas[i]);
+				if (i == 3)
+					printf("    !!! %i    ", count);
+				if (i == 4)
+					printf("    max %i    ", maxcount);
+				if (i == 5)
+					printf("    lvl %i    ", lvl);
+				if (i < 25 - 1)
+					printf("\n");
+			}
+
+			if (GetKeyState('A') < 0)
+				dvigraket(raket.x - 1);
+			if (GetKeyState('D') < 0)
+				dvigraket(raket.x + 1);
+			if (GetKeyState('W') < 0)
+				run = TRUE;
+			if (!run)
+			    pokball(raket.x + raket.w / 2, raket.y - 1);
+			Sleep(10);
+
+		} while ((GetKeyState('V') >= 0));
+	return 0;
+}
